@@ -97,6 +97,7 @@ export default function Dashboard() {
   useEffect(() => {
     const q = query(
       collection(db, "accessLogs"),
+      where("userId", "==", user.uid),
       limit(10)
     );
     const unsub = onSnapshot(q, (snap) => {

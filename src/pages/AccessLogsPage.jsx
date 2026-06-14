@@ -61,7 +61,11 @@ export default function AccessLogsPage() {
   const [myOnly, setMyOnly] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, "accessLogs"), limit(50));
+    const q = query(
+      collection(db, "accessLogs"),
+      where("userId", "==", user.uid),
+      limit(50)
+    );
     const unsub = onSnapshot(q, snap => {
       setLogs(snap.docs.map(d => {
         const data = d.data();
