@@ -5,8 +5,16 @@ import { db } from "../config/firebase";
 import { ref, set } from "firebase/database";
 import { rtdb } from "../config/firebase";
 import {
-  doc, setDoc, onSnapshot, serverTimestamp, Timestamp,
-  collection, query, where, getDocs
+  doc,
+  setDoc,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc
 } from "firebase/firestore";
 
 const OTP_TTL = 60;
@@ -119,25 +127,50 @@ export default function OTPPage() {
 
 const generateOTP = async () => {
   if (!user || generating) return;
+
   setGenerating(true);
+
   const code = String(Math.floor(1000 + Math.random() * 9000));
-  const expiresAt = Timestamp.fromDate(new Date(Date.now() + OTP_TTL * 1000));
+
+  const expiresAt = Timestamp.fromDate(
+    new Date(Date.now() + OTP_TTL * 1000)
+  );
+
   const expiresAtMs = Date.now() + OTP_TTL * 1000;
+
   try {
-    // Write to Firestore (for web app display)
+    // Write OTP to Firestore (for web app display)
     await setDoc(doc(db, "otps", user.uid), {
-      code, userId: user.uid,
+      code,
+      userId: user.uid,
       userName: user.fullName || user.email,
-      expiresAt, createdAt: serverTimestamp(), used: false,
+      expiresAt,
+      createdAt: serverTimestamp(),
+      used: false,
     });
 
-    // Write to Realtime Database (for ESP32 to read)
+    // Write OTP to Realtime Database (for ESP32)
     await set(ref(rtdb, `otps/${user.uid}`), {
       code,
       expiresAt: expiresAtMs,
       used: false,
     });
-  } catch(e) { console.error(e); }
+
+    // Create Access Log Entry
+    await addDoc(collection(db, "accessLogs"), {
+      userId: user.uid,
+      userName: user.fullName || user.email,
+      success: true,
+      method: "OTP Generated",
+      duration: 60,
+      timestamp: serverTimestamp(),
+    });
+
+    console.log("OTP generated successfully and access log created");
+  } catch (e) {
+    console.error("Error generating OTP:", e);
+  }
+
   setGenerating(false);
 };
 
