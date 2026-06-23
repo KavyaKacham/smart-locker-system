@@ -8,11 +8,18 @@ import {
 } from "firebase/firestore";
 
 const SLOT_DURATION = 60;
-const SLOTS = Array.from({ length: 14 }, (_, i) => {
-  const h = 6 + i;
-  const start = `${String(h).padStart(2,"0")}:00`;
-  const end   = `${String(h+1).padStart(2,"0")}:00`;
-  return { id: i, label: `${start} – ${end}`, startHour: h };
+const SLOTS = Array.from({ length: 24 }, (_, i) => {
+  const startHour = i;
+  const endHour = (i + 1) % 24;
+
+  const start = `${String(startHour).padStart(2, "0")}:00`;
+  const end = `${String(endHour).padStart(2, "0")}:00`;
+
+  return {
+    id: i,
+    label: `${start} – ${end}`,
+    startHour
+  };
 });
 
 // ── Local date helper (avoids UTC "yesterday" bug) ─────────
